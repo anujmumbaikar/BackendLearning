@@ -165,7 +165,6 @@ const logoutUser = asyncHandler(async(req,res)=>{
 })
 
 //what if our accessToken get expired then we hv to give refreshToken which is stored into our db
-
 const refreshAccessToken = asyncHandler(async(req,res)=>{
     const incomingRefreshToken = req.cookies.refreshToken || req.body.refreshToken
     if(!incomingRefreshToken){
@@ -192,5 +191,91 @@ const refreshAccessToken = asyncHandler(async(req,res)=>{
     }
 })
 
+const changeCurrentPassword = asyncHandler(async(req,res)=>{
+    const {oldpassword,newPassword} = req.body
+    
+    const user = await User.findById(req.user?._id)
+    const isPasswordCorrect = await user.isPasswordCorrect(oldpassword)
+    if(!isPasswordCorrect){
+        throw new ApiError(404,"Invalid old password")
+    }
+    user.password = newPassword
+    await user.save({validateBeforeSave:false})
 
-export {registerUser,loginUser,logoutUser,refreshAccessToken}
+    return res.status(200).json(new ApiResponse(200,{},"password changed successfully"))
+
+})
+
+const getCurrentUser = asyncHandler(async(req,res)=>{
+    return res.status(200).json(new ApiResponse(200,req.user,"current user fetched successfully"))
+})
+
+const updateAccountDetails = asyncHandler(async(req,res)=>{
+    const {fullname,email,} = req.body
+    if(!fullname || !email){
+        throw new ApiError(400,"all fields are requried")
+    }
+    const user = await User.findByIdAndUpdate(
+        req.user?._id,
+        {
+            $set:{
+                fullname:fullname,
+                email:email
+            }
+        },
+        {new:true}
+    ).select("-password")
+    //agar hame .select()  yaha nhi use krna hai to hame again findby user._id backend hit krte and the .select use krke krte
+    //lekin above is also true . here we are saving databse calls
+
+    return res.status(200).json(new ApiResponse(200,user,"Account details updates successfully"))
+})
+
+
+const updateUserAvatar = asyncHandler(async(req,res)=>{
+    //req.file kaha se mila?? multer middleware se
+    const avatarLocalPath = req.file?.path
+    if(!avatarLocalPath){
+        throw new ApiError(400,"Avatar file is requried")
+    }
+    const avatar = await uploadOnCloudinary(avatarLocalPath)
+    if(!avatar.url){
+        throw new ApiError(500,"something went wrong while uploading avatar")   
+    }
+    const user = await User.findByIdAndUpdate(
+        req.user._id,
+        {
+            $set:{
+                avatar:avatar.url
+            }
+        },
+        {new:true}
+    ).select("-password")
+    return res.status(200).json(new ApiResponse(200,user,"Avatar updated successfully"))
+
+})
+
+const updateUserCoverImage = asyncHandler(async(req,res)=>{
+    //req.file kaha se mila?? multer middleware se
+    const coverImageLocalPath = req.file?.path
+    if(!coverImageLocalPath){
+        throw new ApiError(400,"cover image file is requried")
+    }
+    const coverImage = await uploadOnCloudinary(coverImageLocalPath)
+    if(!coverImage.url){
+        throw new ApiError(500,"something went wrong while uploading image")   
+    }
+    const user = await User.findByIdAndUpdate(
+        req.user._id,
+        {
+            $set:{
+                coverImage:coverImage.url
+            }
+        },
+        {new:true}
+    ).select("-password")
+    return res.status(200).json(new ApiResponse(200,user,"Cover Image updated successfully"))
+
+})
+
+export {registerUser,loginUser,logoutUser,refreshAccessToken,changeCurrentPassword,getCurrentUser,updateAccountDetails,updateUserAvatar,updateUserCoverImage}
