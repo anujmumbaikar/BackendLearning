@@ -136,7 +136,7 @@ const loginUser = asyncHandler(async(req,res)=>{
     }
     return res.
     status(200).
-    cookie("accessToken",accessToken,options).
+    cookie("accessToken",accessToken,options). //key, value, options
     cookie("refreshToken",refreshToken,options).
     json(
         new ApiResponse(200,{user:loggedInUser,accessToken,refreshToken},"user logged in successfully")
@@ -278,4 +278,70 @@ const updateUserCoverImage = asyncHandler(async(req,res)=>{
 
 })
 
-export {registerUser,loginUser,logoutUser,refreshAccessToken,changeCurrentPassword,getCurrentUser,updateAccountDetails,updateUserAvatar,updateUserCoverImage}
+//what is req?
+//req is the request object which is passed to the middleware function in express
+//it contains all the information about the request that is made to the server
+//for eg. req.body contains the data that is sent from the client to the server
+//req.params contains the parameters that are passed in the url
+
+//what is res?
+//res is the response object which is passed to the middleware function in express
+//it contains all the methods that are used to send the response back to the client
+//for eg. res.send() is used to send a response back to the client
+//res.json() is used to send a json response back to the client
+//res.status() is used to set the status code of the response
+
+//what are cookies?
+//cookies are small pieces of data that are stored on the client side by the server
+//they are used to store information about the user and accessTokens and refreshTokens
+//cookies are sent to the server with every request that is made to the server
+//with req.cookies we can access the cookies that are sent by the client to the server
+//with res.cookie() we can set the cookies that are sent by the server to the client
+
+//By writing the .cookie() method we are setting the cookies in the response object
+//means we are sending the cookies to the client
+
+//By writing the .clearCookie() method we are clearing the cookies in the response object
+//means we are clearing the cookies from the client
+
+const getUserChannelProfile = asyncHandler(async(req,res)=>{
+    //get username from req.params which means from url
+    const {username} = req.params
+    if(!username?.trim()){
+        throw new ApiError(400,"username is requried")
+    }
+    const channel = await User.aggregate([
+        {
+            $match:{
+                username:username?.toLowerCase()
+            }
+        },
+        {
+            $lookup:{
+                from:"subscriptions", //Subscription changes to subscriptions in db
+                localField:"_id",
+                foreignField:"channel",
+                as:"subscribers"
+            }
+        },
+        {
+            $lookup:{
+                from:"subscriptions",
+                localField:"_id",
+                foreignField:"subscriber",
+                as:"subscribedTo"
+            }
+        },
+        {
+            $addFields:{
+
+            }
+        }
+    ])
+
+})
+
+
+
+
+export {registerUser,loginUser,logoutUser,refreshAccessToken,changeCurrentPassword,getCurrentUser,updateAccountDetails,updateUserAvatar,updateUserCoverImage,getUserChannelProfile}
