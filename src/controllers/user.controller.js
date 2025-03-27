@@ -64,7 +64,8 @@ const registerUser = asyncHandler( async(req,res)=>{
     //req.body se hamre pas sara ka sara data aata hai, lekin jab hamne router ke ander ek middleware add kr diya hai,before calling registerUser
     //so just like req.body by default express ne diya hai same , multer bhi hame kuch fields deta hai which is req.files
     const avatarLocalPath = req.files?.avatar[0]?.path;
-    console.log(req.files);
+    console.log(req.files.avatar[0].path);
+    
     
     // const coverImageLocalPath = req.files?.coverImage[0]?.path;
     //console.log(req.files);
