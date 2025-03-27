@@ -340,6 +340,60 @@ const getUserChannelProfile = asyncHandler(async(req,res)=>{
 
 })
 
+const getWatchHistory = asyncHandler(async(req,res)=>{
+    //interview ques . req.user._id // what do we get in this?
+    //Many of u will say we get mongoDb id, but its not actually true.
+    //we get a string , this string is not a mongoDb id, 
+    //when we actually need the mongoDB ID we need ObjectId('k23j4b3l543n36bi43j53kn') like this.
+    //And we are using mongoose,so when we give this string to mongoose it automatically converts it into mongoDB ObjectId.
+    //so req.user._id here we get a string not a mongoDb id
+    const user = await User.aggregate([
+        {
+            $match:{
+                _id:new mongoose.Types.ObjectId(req.user._id)
+            }
+        },
+        {
+            $lookup:{
+                from:"videos",
+                localField:"watchHistory",
+                foreignField:"_id",
+                as:"watchHistory",
+                pipeline:[
+                    {
+                        $lookup:{
+                            from:"users",
+                            localField:"owner",
+                            foreignField:"_id",
+                            as:"owner",
+                            pipeline:[
+                                {
+                                    $project:{
+                                        fullname:1,
+                                        username:1,
+                                        avatar:1
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    //this is optional , as we know we get data in array and we hv to access its [0] th index
+                    //now this is optional, where we can change the datastructure to ease.
+                    //cuz as we hv done , there may be array inside array , two for loops etc then access its 0th value
+                    {
+                        $addFields:{
+                            owner:{
+                                $first:"$owner"  // or $arrayElemAt:["$owner",0]
+                            }
+                        }
+                    }
+                    //now in frontend we get object insted of array
+                ]
+            }
+        }
+    ])
+})
+
 
 
 
