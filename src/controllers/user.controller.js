@@ -4,6 +4,7 @@ import {User} from "../models/user.model.js"
 import {uploadOnCloudinary} from "../utils/cloudinary.js"
 import {ApiResponse} from "../utils/ApiResponse.js"
 import jwt from "jsonwebtoken"
+import { channel } from "diagnostics_channel"
 
 //generation access and refresh tokens
 //yeh actually hamara internal use ke liye hai islye ham asyncHandler nhi use karenge
@@ -274,32 +275,6 @@ const updateUserCoverImage = asyncHandler(async(req,res)=>{
 
 })
 
-//what is req?
-//req is the request object which is passed to the middleware function in express
-//it contains all the information about the request that is made to the server
-//for eg. req.body contains the data that is sent from the client to the server
-//req.params contains the parameters that are passed in the url
-
-//what is res?
-//res is the response object which is passed to the middleware function in express
-//it contains all the methods that are used to send the response back to the client
-//for eg. res.send() is used to send a response back to the client
-//res.json() is used to send a json response back to the client
-//res.status() is used to set the status code of the response
-
-//what are cookies?
-//cookies are small pieces of data that are stored on the client side by the server
-//they are used to store information about the user and accessTokens and refreshTokens
-//cookies are sent to the server with every request that is made to the server
-//with req.cookies we can access the cookies that are sent by the client to the server
-//with res.cookie() we can set the cookies that are sent by the server to the client
-
-//By writing the .cookie() method we are setting the cookies in the response object
-//means we are sending the cookies to the client
-
-//By writing the .clearCookie() method we are clearing the cookies in the response object
-//means we are clearing the cookies from the client
-
 const getUserChannelProfile = asyncHandler(async(req,res)=>{
     //get username from req.params which means from url
     const {username} = req.params
@@ -330,10 +305,38 @@ const getUserChannelProfile = asyncHandler(async(req,res)=>{
         },
         {
             $addFields:{
-
+                subscribersCount:{
+                    $size:"$subscribers"
+                },
+                channelsSubscribedToCount:{
+                    $size:"$subscribedTo"
+                },
+                isSubscribed:{
+                    $cond:{
+                        //what we want to do is ..... whatever the document which has come to me , am i tthere in that document or not !!
+                        if:{$in:[req.user?._id, "$subscribers.subscriber"]},
+                        then:true,
+                        else:false
+                    }
+                }
+            }
+        },
+        {
+            $project:{
+                fullname:1,
+                username:1,
+                subscribersCount:1,
+                channelsSubscribedToCount:1,
+                isSubscribed:1,
+                avatar:1,
+                coverImage:1
             }
         }
     ])
+    if(!channel?.length){
+        throw new ApiError(404,"Channel not found")
+    }
+    return res.status(200).json(new ApiResponse(200,channel[0],"Channel profile fetched successfully"))
 
 })
 

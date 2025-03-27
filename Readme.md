@@ -23,10 +23,7 @@
 //By writing the .clearCookie() method we are clearing the cookies in the response object
 //means we are clearing the cookies from the client
 
-<<<<<<< HEAD
 This is a learning backend series with javascript
 
 
 27R3VDEFYFX4N0VC3FRTQZX emu8086 code
-=======
->>>>>>> eb2399c (Update README and user controller with detailed comments on request/response objects and cookie handling; add getUserChannelProfile function)
